@@ -39,8 +39,10 @@
 	}
 }
 
+// All arrows
 .arrow_box:after, .arrow_box:before {
-	right: 100%;
+	top: 50%;
+	border-color: rgba(0, 0, 0, 0);
 	border: solid transparent;
 	content: " ";
 	height: 0;
@@ -48,18 +50,33 @@
 	position: absolute;
 	pointer-events: none;
 }
-
 .arrow_box:after {
-	border-color: rgba(0, 0, 0, 0);
-	border-right-color: fade(white, 70%);
 	border-width: 12px;
-	top: 50%;
 	margin-top: -12px;
 }
 .arrow_box:before {
-	border-color: rgba(0, 0, 0, 0);
-	border-right-color: fade(grey, 20%);
 	border-width: 14px;
-	top: 50%;
 	margin-top: -14px;
+}
+
+//
+.arrow_box.right:after, .arrow_box.right:before {
+	right: 100%;
+}
+.arrow_box.right:after {
+	border-right-color: fade(white, 70%);
+}
+.arrow_box.right:before {
+	border-right-color: fade(grey, 20%);
+}
+
+.arrow_box.left:after {
+	border-left-color: fade(white, 70%);
+}
+.arrow_box.left:before {
+	border-left-color: fade(grey, 20%);
+}
+
+.arrow_box.left:after, .arrow_box.left:before {
+	left: 100%;
 }
