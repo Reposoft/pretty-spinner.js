@@ -17,13 +17,17 @@
 
 		tagName: 'div',
 
-		className: 'pretty-spinner arrow_box',
+		className: function () {
+			return 'pretty-spinner arrow_box ' + this.options.direction;
+		},
 
 		initialize: function (options) {
-			this.value = options.default;
+			this.value = window.isNaN(options.default) ? 0 : options.default;
 			this.$el.hammer();
 
 			this.fillWheel();
+
+			this.round();
 		},
 
 		fillWheel: function () {
@@ -59,7 +63,12 @@
 		events: {
 			'dragup': 'spin',
 			'dragdown': 'spin',
-			'dragend': 'round'
+			'dragend': 'round',
+			'click': 'clickSteal'
+		},
+
+		clickSteal: function () {
+			return false;
 		},
 
 		spin: function (e) {
@@ -81,28 +90,35 @@
 	});
 
 	/**
-	 * Destroys a spinner set for a specified element if it exists.
+	 * Positions the spinner next to the element.
 	 */
-	var destroySpinner = function (el) {
-		if (!spinners[el]) { return undefined; }
+	var positionSpinner = function (spinView, options) {
+		// Append
+		spinView.render().$el.appendTo(options.selector || 'body');
 
-		var value = spinners[el].value;
+		// Position
+		var offsetEl = $(options.selector || this);
+		var offset = offsetEl.offset() || {};
 
-		spinners[el].remove();
-		spinners[el] = undefined;
+		if (options.direction === 'right') {
+			offset.left += offsetEl.width() + 35;
+		} else if (options.direction === 'left') {
+			offset.left -= offsetEl.width();
+		}
 
-		return value;
+		offset.top -= spinView.$el.outerHeight(true) / 2 - 8;
+
+
+		spinView.$el.offset(offset);
 	};
-
-	// Storage for different element's spinners
-	var spinners = {};
 
 	// Replace in plugin options object to override these defaults
 	var defaults = {
 		min: 0,
 		max: 100,
 		'default': 10,
-		step: 0.5
+		step: 0.5,
+		direction: 'right'
 	};
 
 	/**
@@ -110,8 +126,6 @@
 	 * If options equals 'destroy' the plugin is disabled.
 	 */
 	$.fn.prettySpinner = function (options) {
-		if (options === 'destroy') { return destroySpinner(this); }
-
 		options = $.extend({}, defaults, options);
 
 		var spinModel = new Backbone.Model();
@@ -120,27 +134,23 @@
 
 		var spinView = new SpinView(options);
 
-		// Store the view so we have a reference for removal
-		spinners[this] = ('prettySpinner', spinView);
+		var myPositioner = positionSpinner.bind(this, spinView, options);
 
-		// Append
-		spinView.render().$el.appendTo(options.selector || 'body');
+		var myRemover = spinView.remove.bind(spinView);
 
 		// Position
-		var offsetEl = $(options.selector || this);
-		var offset = offsetEl.offset() || {};
-
-		offset.left += offsetEl.width() + 35;
-		offset.top -= spinView.$el.outerHeight(true) / 2 - 8;
-
-		spinView.$el.offset(offset);
+		this.bind('focus', myPositioner);
 
 		return {
 			liveValue: function liveValue(callback) {
+				callback(spinModel.get('value'));
+
 				spinModel.on('change:value', function (model) {
 					callback(model.changed.value);
 				});
-			}
+			},
+			updatePosition: myPositioner,
+			remove: myRemover
 		};
 	};
 }(jQuery));
