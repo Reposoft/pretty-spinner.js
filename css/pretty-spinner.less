@@ -1,0 +1,65 @@
+.pretty-spinner {
+	position: relative;
+	height: calc(~"5 * 30px");
+	width: 50px;
+	z-index: 25;
+	// overflow: hidden;
+	box-shadow: 2px 3px 18px 3px fade(black, 20%);
+
+	.pretty-spinner-inner {
+		background: linear-gradient(to bottom,
+									fade(black, 30%) 0%,
+									transparent 25%,
+									transparent 75%,
+									fade(black, 30%) 100%);
+
+		overflow: hidden;
+		width: 100%;
+		height: 100%;
+
+		.pretty-spinner-wheel {
+			-webkit-transition: margin-top linear 0.1s;
+			// Mozilla does not spin the wheel at all when animating the values
+			// -moz-transition: margin-top linear 0.1s;
+
+			width: 100%;
+			height: 30px;
+			background: fade(white, 70%);
+			border: 1px solid fade(grey, 20%);
+			padding: 5px;
+			text-align: center;
+			vertical-align: middle;
+			pointer-events: none;
+
+			font-weight: bold;
+
+			box-sizing: border-box;
+			-moz-box-sizing: border-box;
+		}
+	}
+}
+
+.arrow_box:after, .arrow_box:before {
+	right: 100%;
+	border: solid transparent;
+	content: " ";
+	height: 0;
+	width: 0;
+	position: absolute;
+	pointer-events: none;
+}
+
+.arrow_box:after {
+	border-color: rgba(0, 0, 0, 0);
+	border-right-color: fade(white, 70%);
+	border-width: 12px;
+	top: 50%;
+	margin-top: -12px;
+}
+.arrow_box:before {
+	border-color: rgba(0, 0, 0, 0);
+	border-right-color: fade(grey, 20%);
+	border-width: 14px;
+	top: 50%;
+	margin-top: -14px;
+}
