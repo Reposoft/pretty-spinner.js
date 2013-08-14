@@ -64,7 +64,17 @@
 			'dragup': 'spin',
 			'dragdown': 'spin',
 			'dragend': 'round',
+			'touch': 'setActive',
+			'release': 'clearActive',
 			'click': 'clickSteal'
+		},
+
+		setActive: function () {
+			this.model.set('active', true);
+		},
+
+		clearActive: function () {
+			this.model.set('active', false);
 		},
 
 		clickSteal: function () {
@@ -138,8 +148,20 @@
 
 		var myRemover = spinView.remove.bind(spinView);
 
-		// Position
+		// Keep position and visibility updated
 		this.bind('focus', myPositioner);
+		this.bind('blur', function () {
+			setTimeout(function () {
+				if (!spinModel.get('active')) {
+					spinView.$el.detach();
+				}
+			}, 100);
+		});
+		spinModel.on('change:active', function (model) {
+			if (model.changed.active === false) {
+				this.focus();
+			}
+		}.bind(this));
 
 		return {
 			liveValue: function liveValue(callback) {
