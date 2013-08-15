@@ -122,6 +122,8 @@
 			// Make sure that we are not outside the right end of the screen
 			if (offset.left + spinView.$el.width() + offsetEl.width() + 30 > $(document).width()) {
 				options.direction = 'top';
+			} else if (offset.top - spinView.$el.height() - 5 < 0) {
+				options.direction = 'bottom';
 			} else {
 				offset.left += offsetEl.width() + 30;
 			}
