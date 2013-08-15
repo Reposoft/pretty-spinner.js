@@ -30,6 +30,13 @@
 			this.round();
 		},
 
+		setDirection: function (direction) {
+			this.$el.removeClass('top right bottom left');
+			this.$el.addClass(direction);
+
+			this.render();
+		},
+
 		fillWheel: function () {
 			var container = document.createElement('ul');
 			container.className = 'unstyled pretty-spinner-inner';
@@ -110,13 +117,38 @@
 		var offsetEl = $(options.selector || this);
 		var offset = offsetEl.offset() || {};
 
+		// Standard position is to the right of the element
 		if (options.direction === 'right') {
-			offset.left += offsetEl.width() + 35;
-		} else if (options.direction === 'left') {
+			// Make sure that we are not outside the right end of the screen
+			if (offset.left + spinView.$el.width() + offsetEl.width() + 30 > $(document).width()) {
+				options.direction = 'top';
+			} else {
+				offset.left += offsetEl.width() + 30;
+			}
+		}
+
+		// Left needs no corrections (yet)
+		if (options.direction === 'left') {
 			offset.left -= offsetEl.width();
 		}
 
-		offset.top -= spinView.$el.outerHeight(true) / 2 - 8;
+		if (options.direction === 'top') {
+			// Make sure we are not outside the top of the screen
+			if (offset.top - spinView.$el.height() - 5 < 0) {
+				options.direction = 'bottom';
+			} else {
+				offset.top -= spinView.$el.outerHeight(true) + 5;
+			}
+		} else {
+			// Standard top offset
+			offset.top -= spinView.$el.outerHeight(true) / 2 - 8;
+		}
+
+		if (options.direction === 'bottom') {
+			offset.top += spinView.$el.outerHeight(true) - 45;
+		}
+
+		spinView.setDirection(options.direction);
 
 
 		spinView.$el.offset(offset);
@@ -133,10 +165,9 @@
 
 	/**
 	 * Exposed interface. The defaults object above explains possible options.
-	 * If options equals 'destroy' the plugin is disabled.
 	 */
 	$.fn.prettySpinner = function (options) {
-		options = $.extend({}, defaults, options);
+		options = _.defaults(options, defaults);
 
 		var spinModel = new Backbone.Model();
 
@@ -150,6 +181,10 @@
 
 		// Keep position and visibility updated
 		this.bind('focus', myPositioner);
+		// TODO: Workaround to force reflow of page for first display
+		// Without this the first position will be off
+		this.one('focus.pretty-spinner-workaround', myPositioner);
+
 		this.bind('blur', function () {
 			setTimeout(function () {
 				if (!spinModel.get('active')) {
