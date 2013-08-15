@@ -17,26 +17,40 @@
 
 		tagName: 'div',
 
+		/**
+		 * Direction determines which arrow and positioning offset from the element.
+		 * Highly optimized to work with Repos Visual Planner for positioning
+		 */
 		className: function () {
 			return 'pretty-spinner arrow_box ' + this.options.direction;
 		},
 
+		/**
+		 * Setup initial value for the wheel and initialize
+		 * Hammer plugin for propert touch events. Also fills the wheel with numbers.
+		 */
 		initialize: function (options) {
 			this.value = window.isNaN(options.default) ? 0 : options.default;
-			this.$el.hammer();
+			this.model.set('value', this.value);
+
+			this.$el.hammer(_.defaults(options, {
+				drag_min_distance: 1
+			}));
 
 			this.fillWheel();
-
-			this.round();
 		},
 
+		/**
+		 * Accepted directions are top right bottom and left
+		 */
 		setDirection: function (direction) {
 			this.$el.removeClass('top right bottom left');
 			this.$el.addClass(direction);
-
-			this.render();
 		},
 
+		/**
+		 * Fills the view with numbers ranging from min to max
+		 */
 		fillWheel: function () {
 			var container = document.createElement('ul');
 			container.className = 'unstyled pretty-spinner-inner';
@@ -49,39 +63,61 @@
 				container.appendChild(tmpl);
 			}
 
-			this.$el.append(container);
+			this.$el.html(container);
 		},
 
+		/**
+		 * Tries to center the number element that matches
+		 * the actual value the wheel has spun to.
+		 */
 		render: function () {
-			var margin = (-this.value * 30) / this.options.step;
-			this.$('.pretty-spinner-wheel:first-child').css('margin-top', margin + 2 * 30);
+			// Height of each number in the wheel
+			var numberHeight = this.options.spinNumberHeight;
+
+			// We assume two number's initial offset from actual value
+			var startOffset = 2 * numberHeight;
+
+			// Use margin to actually spin the wheel
+			var margin = (-this.value * numberHeight) / this.options.step;
+			this.$('.pretty-spinner-wheel:first-child').css('margin-top', margin + startOffset);
 
 			return this;
 		},
 
-		round: function () {
-			this.value = Math.round(this.value / this.options.step) * this.options.step;
-
-			this.model.set('value', this.value);
-
-			this.render();
+		/**
+		 * Rounds the number to the closest factorial of specified step between
+		 * each number in the wheel.
+		 */
+		roundValue: function () {
+			return Math.round(this.value / this.options.step) * this.options.step;
 		},
 
 		events: {
+			// Hook on the actual spinning
 			'dragup': 'spin',
 			'dragdown': 'spin',
-			'dragend': 'round',
+
+			// To help us know if the wheel is in use by the end-user
 			'touch': 'setActive',
 			'release': 'clearActive',
+
+			// Prevents lost focus on click
 			'click': 'clickSteal'
 		},
 
 		setActive: function () {
-			this.model.set('active', true);
+			this.model.set({
+				active: true,
+			});
 		},
 
 		clearActive: function () {
-			this.model.set('active', false);
+			this.model.set({
+				value: (this.value = this.roundValue()),
+				active: false
+			});
+
+			this.render();
 		},
 
 		clickSteal: function () {
@@ -89,19 +125,13 @@
 		},
 
 		spin: function (e) {
-			var gesture = e.gesture;
+			// Update temporary value
+			this.value = this.model.get('value') - e.gesture.deltaY * this.options.speed;
 
-			var movement = gesture.velocityY * (gesture.direction === 'up' ? 1 : -1);
+			// Validate it
+			this.value = Math.max(this.options.min, Math.min(this.options.max, this.value));
 
-			this.value += this.options.step * movement;
-
-			if (this.value < this.options.min) {
-				this.value = this.options.min;
-			}
-			if (this.value > this.options.max) {
-				this.value = this.options.max;
-			}
-
+			// Update the view
 			this.render();
 		}
 	});
@@ -162,7 +192,11 @@
 		max: 100,
 		'default': 10,
 		step: 0.5,
-		direction: 'right'
+		direction: 'right',
+		speed: (1 / 27),
+
+		// View defaults, might be tightly coupled with CSS as well
+		spinNumberHeight: 30
 	};
 
 	/**
@@ -194,6 +228,8 @@
 				}
 			}, 100);
 		});
+
+		// Focus the element once the wheel has stopped
 		spinModel.on('change:active', function (model) {
 			if (model.changed.active === false) {
 				this.focus();
