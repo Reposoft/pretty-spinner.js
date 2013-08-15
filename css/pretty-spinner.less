@@ -41,7 +41,6 @@
 
 // All arrows
 .arrow_box:after, .arrow_box:before {
-	top: 50%;
 	border-color: rgba(0, 0, 0, 0);
 	border: solid transparent;
 	content: " ";
@@ -52,31 +51,64 @@
 }
 .arrow_box:after {
 	border-width: 12px;
-	margin-top: -12px;
 }
 .arrow_box:before {
 	border-width: 14px;
-	margin-top: -14px;
 }
 
-//
+// Right ones
 .arrow_box.right:after, .arrow_box.right:before {
+	top: 50%;
 	right: 100%;
 }
 .arrow_box.right:after {
 	border-right-color: fade(white, 70%);
+	margin-top: -12px;
 }
 .arrow_box.right:before {
 	border-right-color: fade(grey, 20%);
+	margin-top: -14px;
 }
 
+// Left ones
 .arrow_box.left:after {
 	border-left-color: fade(white, 70%);
+	margin-top: -12px;
 }
 .arrow_box.left:before {
 	border-left-color: fade(grey, 20%);
+	margin-top: -14px;
 }
 
 .arrow_box.left:after, .arrow_box.left:before {
+	top: 50%;
 	left: 100%;
+}
+
+// Top
+.arrow_box.top:after, .arrow_box.top:before {
+	top: 100%;
+	left: 50%;
+}
+.arrow_box.top:after {
+	border-top-color: fade(white, 70%);
+	margin-left: -12px;
+}
+.arrow_box.top:before {
+	border-top-color: fade(grey, 20%);
+	margin-left: -14px;
+}
+
+// Bottom
+.arrow_box.bottom:after, .arrow_box.bottom:before {
+	bottom: 100%;
+	left: 50%;
+}
+.arrow_box.bottom:after {
+	border-bottom-color: fade(white, 70%);
+	margin-left: -12px;
+}
+.arrow_box.bottom:before {
+	border-bottom-color: fade(grey, 20%);
+	margin-left: -14px;
 }
