@@ -25,6 +25,8 @@
 			return 'pretty-spinner arrow_box ' + this.options.direction;
 		},
 
+		template: _.template('<input type="text" class="pretty-spinner-keyboard-input hidden" />'),
+
 		/**
 		 * Setup initial value for the wheel and initialize
 		 * Hammer plugin for propert touch events. Also fills the wheel with numbers.
@@ -36,6 +38,17 @@
 			this.$el.hammer(_.defaults(options, {
 				drag_min_distance: 1
 			}));
+
+			// Listen to global keyboard events
+			this.$el.append(this.template({ value: this.value }));
+			$(document).on('keydown.prettyspinner', this.keydownHook.bind(this));
+			$(document).on('keydown.prettyspinner', this.keyupHook.bind(this));
+
+			this.listenTo(this.model, 'change:active', function (model) {
+				if (!model.changed.active) {
+					this.$('.pretty-spinner-keyboard-input').addClass('hidden');
+				}
+			});
 
 			this.fillWheel();
 		},
@@ -63,7 +76,7 @@
 				container.appendChild(tmpl);
 			}
 
-			this.$el.html(container);
+			this.$el.append(container);
 		},
 
 		/**
@@ -105,6 +118,32 @@
 			'click': 'clickSteal'
 		},
 
+		keydownHook: function () {
+			// If neither our target nor any of our own elements are in focus we have nothing to do here
+			if (!this.model.get('$target').is(':focus') && !this.$el.add(this.$el.children()).is(':focus')) { return; }
+			this.model.set('active', true);
+			this.model.set('lastKeyPress', moment());
+			this.$('.pretty-spinner-keyboard-input').removeClass('hidden');
+
+			this.$('.pretty-spinner-keyboard-input').focus();
+
+			setTimeout(function () {
+				var inputVal = +$('.pretty-spinner-keyboard-input').val();
+
+				this.value = _.isNumber(inputVal) ? inputVal : this.value;
+				this.model.set('value', (this.value = this.roundValue()));
+				this.render();
+			}.bind(this), 1);
+
+			// return false;
+		},
+
+		keyupHook: function () {
+			setTimeout(function () {
+				if (moment().diff(this.model.get('lastKeyPress')) > 2500) {	this.clearActive(); }
+			}.bind(this), 2500);
+		},
+
 		setActive: function () {
 			this.model.set({
 				active: true,
@@ -116,6 +155,8 @@
 				value: (this.value = this.roundValue()),
 				active: false
 			});
+
+			this.$('.pretty-spinner-keyboard-input').val('');
 
 			this.render();
 		},
@@ -133,6 +174,12 @@
 
 			// Update the view
 			this.render();
+		},
+
+		remove: function () {
+			$(document).off('keyup.prettyspinner');
+			$(document).off('keydown.prettyspinner');
+			Backbone.View.prototype.remove.apply(this, arguments);
 		}
 	});
 
@@ -213,7 +260,20 @@
 
 		var myPositioner = positionSpinner.bind(this, spinView, options);
 
-		var myRemover = spinView.remove.bind(spinView);
+		var myRemover = function () {
+			spinView.remove();
+			this.unbind('focus', myPositioner);
+			this.unbind('blur', myDetacher);
+			spinModel.off('change');
+		}.bind(this);
+
+		var myDetacher = function () {
+			setTimeout(function () {
+				if (!spinModel.get('active')) {
+					spinView.$el.detach();
+				}
+			}, 100);
+		};
 
 		// Keep position and visibility updated
 		this.bind('focus', myPositioner);
@@ -221,13 +281,7 @@
 		// Without this the first position will be off
 		this.one('focus.pretty-spinner-workaround', myPositioner);
 
-		this.bind('blur', function () {
-			setTimeout(function () {
-				if (!spinModel.get('active')) {
-					spinView.$el.detach();
-				}
-			}, 100);
-		});
+		this.bind('blur', myDetacher);
 
 		// Focus the element once the wheel has stopped
 		spinModel.on('change:active', function (model) {
@@ -235,6 +289,8 @@
 				this.focus();
 			}
 		}.bind(this));
+
+		spinModel.set('$target', this);
 
 		return {
 			liveValue: function liveValue(callback) {
