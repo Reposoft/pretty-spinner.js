@@ -10,6 +10,8 @@
 (function ($, undefined) {
 	'use strict';
 
+	var wrapper = $('<div class="pretty-spinner-wrapper" />').appendTo('body');
+
 	/**
 	 *
 	 */
@@ -115,12 +117,24 @@
 			'release': 'clearActive',
 
 			// Prevents lost focus on click
-			'click': 'clickSteal'
+			'click': 'clickSteal',
+
+			'keypress': '_setOnEnter'
 		},
 
-		keydownHook: function () {
+		_setOnEnter: function (e) {
+			if (e.which == 13) {
+				this.model.set('finalValue', this.model.get('value'));
+				return false;
+			}
+		},
+
+		keydownHook: function (e) {
 			// If neither our target nor any of our own elements are in focus we have nothing to do here
-			if (!this.model.get('$target').is(':focus') && !this.$el.add(this.$el.children()).is(':focus')) { return; }
+			// If the keypress was not of a numerical value we have nothing to do here either
+			if ((!this.model.get('$target').is(':focus') && !this.$el.add(this.$el.children()).is(':focus'))
+						|| !this._isNumericalKey(e.which)) { return; }
+
 			this.model.set('active', true);
 			this.model.set('lastKeyPress', moment());
 			this.$('.pretty-spinner-keyboard-input').removeClass('hidden');
@@ -134,8 +148,13 @@
 				this.model.set('value', (this.value = this.roundValue()));
 				this.render();
 			}.bind(this), 1);
+		},
 
-			// return false;
+		/**
+		 * Checks if the keycode is a numerical key (regular and numpad keys accepted)
+		 */
+		_isNumericalKey: function (keycode) {
+			return (keycode >= 48 && keycode <= 57) || (keycode >= 96 && keycode <= 105);
 		},
 
 		keyupHook: function () {
@@ -188,7 +207,7 @@
 	 */
 	var positionSpinner = function (spinView, options) {
 		// Append
-		spinView.render().$el.appendTo(options.selector || 'body');
+		spinView.render().$el.appendTo(wrapper);
 
 		// Position
 		var offsetEl = $(options.selector || this);
@@ -275,6 +294,20 @@
 			}, 100);
 		};
 
+		var myValueUpdater = function (callback) {
+			callback(spinModel.get('value'));
+
+			spinModel.on('change:value', function (model) {
+				callback(model.changed.value);
+			});
+		};
+
+		var myFinalValue = function (callback) {
+			spinModel.on('change:finalValue', function (model) {
+				callback(model.changed.finalValue);
+			});
+		};
+
 		// Keep position and visibility updated
 		this.bind('focus', myPositioner);
 		// TODO: Workaround to force reflow of page for first display
@@ -293,15 +326,10 @@
 		spinModel.set('$target', this);
 
 		return {
-			liveValue: function liveValue(callback) {
-				callback(spinModel.get('value'));
-
-				spinModel.on('change:value', function (model) {
-					callback(model.changed.value);
-				});
-			},
+			liveValue: myValueUpdater,
 			updatePosition: myPositioner,
-			remove: myRemover
+			remove: myRemover,
+			done: myFinalValue
 		};
 	};
 }(jQuery));
