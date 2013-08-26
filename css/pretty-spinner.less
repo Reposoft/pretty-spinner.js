@@ -1,3 +1,13 @@
+// Workaround for FF adding white space for the bounding box of the spinner
+// even though it is placed somewhere else
+.pretty-spinner-wrapper {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 0;
+	height: 0;
+}
+
 .pretty-spinner {
 	position: relative;
 	height: calc(~"5 * 30px");
